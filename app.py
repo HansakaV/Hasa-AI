@@ -1,14 +1,13 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 import re
 
-model_name = "distilgpt2"
+model_name = "google/flan-t5-small"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
 def calculate_if_math(text):
-    # detect simple math expressions
     if re.fullmatch(r"[0-9\s\+\-\*/\.]+", text.strip()):
         try:
             return str(eval(text))
@@ -21,14 +20,14 @@ def hasa_ai(prompt):
     if math_result is not None:
         return math_result
 
-    inputs = tokenizer(prompt, return_tensors="pt")
+    formatted_prompt = f"Answer the question clearly: {prompt}"
+
+    inputs = tokenizer(formatted_prompt, return_tensors="pt")
     outputs = model.generate(
         **inputs,
-        max_length=100,
-        temperature=0.7,
-        do_sample=True,
-        pad_token_id=tokenizer.eos_token_id
+        max_new_tokens=100
     )
+
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 while True:
